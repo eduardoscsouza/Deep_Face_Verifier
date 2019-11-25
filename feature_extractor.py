@@ -3,6 +3,9 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Conv2D, Dense, Flatten, Input, MaxPooling2D
 
+import os
+from glob import glob
+from shutil import copyfile
 import numpy as np
 
 
@@ -49,4 +52,64 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
 
     return extractor_model
 
-get_feature_extractor().summary()
+def get_generator(dir, image_size=224, color_mode='rgb', batch_size=1024):
+    gen_args = dict(featurewise_center=False,
+                    samplewise_center=False,
+                    featurewise_std_normalization=False,
+                    samplewise_std_normalization=False,
+                    zca_whitening=False,
+                    zca_epsilon=1e-06,
+                    rotation_range=0.0,
+                    width_shift_range=0.0,
+                    height_shift_range=0.0,
+                    brightness_range=None,
+                    shear_range=0.0,
+                    zoom_range=0.0,
+                    channel_shift_range=0.0,
+                    fill_mode='nearest',
+                    cval=0.0,
+                    horizontal_flip=False,
+                    vertical_flip=False,
+                    rescale=1.0/255.0,
+                    preprocessing_function=None,
+                    data_format='channels_last',
+                    validation_split=0.0,
+                    dtype=None)
+
+    flow_args = dict(target_size=(image_size, image_size),
+                    color_mode=color_mode,
+                    classes=None,
+                    class_mode='binary',
+                    batch_size=batch_size,
+                    shuffle=False,
+                    seed=500,
+                    save_to_dir=None,
+                    save_prefix="",
+                    save_format='jpg',
+                    follow_links=False,
+                    subset=None,
+                    interpolation='bicubic')
+
+    datagen = ImageDataGenerator(**gen_args).flow_from_directory(dir, **flow_args)
+    return datagen
+
+
+def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
+    extractor = get_feature_extractor(vgg_weights_filepath)
+    generator = get_generator(in_dir)
+
+    folds_files = [fold_file.split(os.sep)[-1] for fold_file in glob(os.path.join(in_dir, "fold_*.txt"))]
+    for i in range(4):
+        cur_out_dir = os.path.join(out_dir, "layer_{}".format(i))
+        if not os.path.exists(cur_out_dir):
+            os.makedirs(cur_out_dir)
+        for fold_file in folds_files:
+            copyfile(os.path.join(in_dir, fold_file), os.path.join(cur_out_dir, fold_file))
+
+    #s = 0
+    #for batch in generator:
+    #    s += len(batch)
+
+    #print(s)
+
+extract_all("dataset", "extracted")
