@@ -1,12 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Conv2D, Dense, Flatten, Input, MaxPooling2D
+from tensorflow.keras.layers import Conv2D, Flatten, Input, MaxPooling2D
 
 import os
 from glob import glob
-from shutil import copyfile
-import numpy as np
+import shutil
 
 
 
@@ -52,7 +51,7 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
 
     return extractor_model
 
-def get_generator(dir, image_size=224, color_mode='rgb', batch_size=1024):
+def get_generator(dir, image_size=224, color_mode='rgb', batch_size=512):
     gen_args = dict(featurewise_center=False,
                     samplewise_center=False,
                     featurewise_std_normalization=False,
@@ -95,21 +94,33 @@ def get_generator(dir, image_size=224, color_mode='rgb', batch_size=1024):
 
 
 def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
-    extractor = get_feature_extractor(vgg_weights_filepath)
-    generator = get_generator(in_dir)
+    if any([os.path.exists(os.path.join(out_dir, "layer_{}".format(i))) for i in range(4)]):
+        print("Removing all \'layer_*\' directorys from output directory. Continue? [y/n]")
+        if input().lower() == 'y':
+            print("Deleting...")
+            for i in range(4):
+                rm_dir = os.path.join(out_dir, "layer_{}".format(i))
+                if os.path.exists(rm_dir):
+                    shutil.rmtree(rm_dir)
+        else:
+            print("Aborting...")
+            return
 
     folds_files = [fold_file.split(os.sep)[-1] for fold_file in glob(os.path.join(in_dir, "fold_*.txt"))]
     for i in range(4):
         cur_out_dir = os.path.join(out_dir, "layer_{}".format(i))
-        if not os.path.exists(cur_out_dir):
-            os.makedirs(cur_out_dir)
+        os.makedirs(cur_out_dir)
         for fold_file in folds_files:
-            copyfile(os.path.join(in_dir, fold_file), os.path.join(cur_out_dir, fold_file))
+            shutil.copyfile(os.path.join(in_dir, fold_file), os.path.join(cur_out_dir, fold_file))
 
-    #s = 0
-    #for batch in generator:
-    #    s += len(batch)
+    extractor = get_feature_extractor(vgg_weights_filepath)
+    generator = get_generator(in_dir)
 
-    #print(s)
+    s = 0
+    for _ in range(len(generator)):
+        batch = generator.next()
+        print(len(batch))
+        s += len(batch)
+    print(s)
 
 extract_all("dataset", "extracted")
