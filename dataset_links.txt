@@ -1,0 +1,10 @@
+class:
+https://cyberextruder.com/face-matching-data-set-download/
+https://www.nist.gov/itl/products-and-services/color-feret-database
+http://vis-www.cs.umass.edu/lfw/
+http://vision.ucsd.edu/~iskwak/ExtYaleDatabase/ExtYaleB.html
+http://vision.ucsd.edu/content/yale-face-database
+http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
+
+autoencoder:
+https://data.vision.ee.ethz.ch/cvl/rrothe/imdb-wiki/
