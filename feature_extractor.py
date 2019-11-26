@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Activation, Conv2D, Dropout, Flatten, Input, MaxPooling2D
+from tensorflow.keras.applications import vgg16
 
 import os
 from glob import glob
@@ -58,7 +59,7 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
 
     return extractor_model
 
-def get_generator(dir, image_size=224, color_mode='rgb', batch_size=256):
+def get_generator(dir, batch_size=256):
     gen_args = dict(featurewise_center=False,
                     samplewise_center=False,
                     featurewise_std_normalization=False,
@@ -76,14 +77,14 @@ def get_generator(dir, image_size=224, color_mode='rgb', batch_size=256):
                     cval=0.0,
                     horizontal_flip=False,
                     vertical_flip=False,
-                    rescale=1.0/255.0,
-                    preprocessing_function=None,
+                    rescale=None,
+                    preprocessing_function=vgg16.preprocess_input,
                     data_format='channels_last',
                     validation_split=0.0,
                     dtype=None)
 
-    flow_args = dict(target_size=(image_size, image_size),
-                    color_mode=color_mode,
+    flow_args = dict(target_size=(224, 224),
+                    color_mode='rgb',
                     classes=None,
                     class_mode='binary',
                     batch_size=batch_size,
