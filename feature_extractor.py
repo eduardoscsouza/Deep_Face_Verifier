@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Conv2D, Flatten, Input, MaxPooling2D
 import os
 from glob import glob
 import shutil
+import numpy as np
 
 
 
@@ -116,11 +117,19 @@ def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
     extractor = get_feature_extractor(vgg_weights_filepath)
     generator = get_generator(in_dir)
 
-    s = 0
+    classes_map = {val : key for key, val in generator.class_indices.items()}
     for _ in range(len(generator)):
-        batch = generator.next()
-        print(len(batch))
-        s += len(batch)
-    print(s)
+        x, y = generator.next()
+        outs = extractor.predict(x)
+        for layer in range(4):
+            for cur_sample, cur_class in zip(outs[layer], y):
+                cur_out_file = os.path.join(out_dir, "layer_{}".format(layer), classes_map[cur_class]+".npy")
+                if os.path.isfile(cur_out_file):
+                    cur_arr = np.load(cur_out_file)
+                    cur_arr = np.concatenate((cur_arr, np.expand_dims(cur_sample, axis=0)), axis=0)
+                else:
+                    cur_arr = np.expand_dims(cur_sample, axis=0)
+                np.save(cur_out_file, cur_arr)
 
 extract_all("dataset", "extracted")
+extract_all("autoencoder_dataset", "autoencoder_extracted")
