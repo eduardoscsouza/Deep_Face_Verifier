@@ -1,0 +1,13 @@
+1. Autoencoder pra face
+2. Teste de hipótese pra redes neurais
+
+Apresentação:
+1. Explicação do problema original
+2. Rede VGG (imagem da arquitetura, estatisticas)
+3. Passos pro projeto:
+    1.1 Obtenção do dataset
+    2.1 Processamento do dataset
+4. Teoria do Aprendizado estatístico pra transfer learning
+    2.1 Funciona porque o modelo original generalizou a função
+    2.2 Os dois domínios têm intersecção, a função ótima para o domínio de treino é boa 
+5. Apresentação em real time 
