@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Activation, Conv2D, Dropout, Flatten, Input, MaxPooling2D
+from tensorflow.keras.applications import vgg16
 
 import os
 from glob import glob
@@ -36,32 +37,31 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
     model = Conv2D(512, (3, 3), padding='same', activation='relu')(model)
     model = Conv2D(512, (3, 3), padding='same', activation='relu')(model)
     model = Conv2D(512, (3, 3), padding='same', activation='relu')(model)
-    model_last_conv = MaxPooling2D((2, 2), strides=(2, 2))(model)
+    model = MaxPooling2D((2, 2), strides=(2, 2))(model)
 
-    model_dense_1 = Conv2D(4096, (7, 7), padding='valid', activation='relu')(model_last_conv)
+    model_dense_0 = Conv2D(4096, (7, 7), padding='valid', activation='relu')(model)
+    model_dense_0 = Dropout(0.5)(model_dense_0)
+
+    model_dense_1 = Conv2D(4096, (1, 1), padding='valid', activation='relu')(model_dense_0)
     model_dense_1 = Dropout(0.5)(model_dense_1)
 
-    model_dense_2 = Conv2D(4096, (1, 1), padding='valid', activation='relu')(model_dense_1)
-    model_dense_2 = Dropout(0.5)(model_dense_2)
+    model_dense_2 = Conv2D(2622, (1, 1), padding='valid')(model_dense_1)
+    model_dense_2 = Flatten()(model_dense_2)
 
-    model_dense_3 = Conv2D(2622, (1, 1), padding='valid')(model_dense_2)
-    model_dense_3 = Flatten()(model_dense_3)
-
-    model_out = Activation('softmax')(model_dense_3)
+    model_out = Activation('softmax')(model_dense_2)
 
     vgg_model = Model(model_in, model_out)
     vgg_model.load_weights(vgg_weights_filepath)
 
-    extract_last_conv = Flatten()(model_last_conv)
+    extract_dense_0 = Flatten()(model_dense_0)
     extract_dense_1 = Flatten()(model_dense_1)
-    extract_dense_2 = Flatten()(model_dense_2)
-    extract_dense_3 = model_dense_3
+    extract_dense_2 = model_dense_2
 
-    extractor_model = Model(model_in, [extract_last_conv, extract_dense_1, extract_dense_2, extract_dense_3])
+    extractor_model = Model(model_in, [extract_dense_0, extract_dense_1, extract_dense_2])
 
     return extractor_model
 
-def get_generator(dir, image_size=224, color_mode='rgb', batch_size=512):
+def get_generator(dir, batch_size=256):
     gen_args = dict(featurewise_center=False,
                     samplewise_center=False,
                     featurewise_std_normalization=False,
@@ -79,14 +79,14 @@ def get_generator(dir, image_size=224, color_mode='rgb', batch_size=512):
                     cval=0.0,
                     horizontal_flip=False,
                     vertical_flip=False,
-                    rescale=1.0/255.0,
-                    preprocessing_function=None,
+                    rescale=None,
+                    preprocessing_function=vgg16.preprocess_input,
                     data_format='channels_last',
                     validation_split=0.0,
                     dtype=None)
 
-    flow_args = dict(target_size=(image_size, image_size),
-                    color_mode=color_mode,
+    flow_args = dict(target_size=(224, 224),
+                    color_mode='rgb',
                     classes=None,
                     class_mode='binary',
                     batch_size=batch_size,
@@ -104,11 +104,14 @@ def get_generator(dir, image_size=224, color_mode='rgb', batch_size=512):
 
 
 def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
-    if any([os.path.exists(os.path.join(out_dir, "layer_{}".format(i))) for i in range(4)]):
+    extractor = get_feature_extractor(vgg_weights_filepath)
+    generator = get_generator(in_dir)
+
+    if any([os.path.exists(os.path.join(out_dir, "layer_{}".format(i))) for i in range(len(extractor.output))]):
         print("Removing all \'layer_*\' directorys from output directory. Continue? [y/n]")
         if input().lower() == 'y':
             print("Deleting...")
-            for i in range(4):
+            for i in range(len(extractor.output)):
                 rm_dir = os.path.join(out_dir, "layer_{}".format(i))
                 if os.path.exists(rm_dir):
                     shutil.rmtree(rm_dir)
@@ -117,20 +120,17 @@ def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
             return
 
     folds_files = [fold_file.split(os.sep)[-1] for fold_file in glob(os.path.join(in_dir, "fold_*.txt"))]
-    for i in range(4):
+    for i in range(len(extractor.output)):
         cur_out_dir = os.path.join(out_dir, "layer_{}".format(i))
         os.makedirs(cur_out_dir)
         for fold_file in folds_files:
             shutil.copyfile(os.path.join(in_dir, fold_file), os.path.join(cur_out_dir, fold_file))
 
-    extractor = get_feature_extractor(vgg_weights_filepath)
-    generator = get_generator(in_dir)
-
     classes_map = {val : key for key, val in generator.class_indices.items()}
     for _ in range(len(generator)):
         x, y = generator.next()
         outs = extractor.predict(x)
-        for layer in range(4):
+        for layer in range(len(extractor.output)):
             for cur_sample, cur_class in zip(outs[layer], y):
                 cur_out_file = os.path.join(out_dir, "layer_{}".format(layer), classes_map[cur_class]+".npy")
                 if os.path.isfile(cur_out_file):
