@@ -9,7 +9,9 @@ import shutil
 import numpy as np
 
 
-
+# cria modelo keras com pesos do arquivo vgg_face_weights.h5
+# cria outro modelo chamado extractor_model, a partir do vgg_model, cujos outputs sao camadas intermediarias do primeiro
+# retorna o extractor_model
 def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
     model_in = Input(shape=(224, 224, 3))
 

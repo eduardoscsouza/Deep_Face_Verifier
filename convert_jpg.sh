@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# Converte todas as imagens de dataset pra imagens jpg no diretorio temp_jpg
+
 in_dir="dataset"
 out_dir="temp_jpg"
 
+# Passa por todas as imagens dentro do dataset
 find $in_dir -maxdepth 2 -mindepth 2 -type f | while read line
 do
     cur_dir=$(printf %s $line | cut -d\/ -f2)
