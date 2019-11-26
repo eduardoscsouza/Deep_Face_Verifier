@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Conv2D, Flatten, Input, MaxPooling2D
+from tensorflow.keras.layers import Activation, Conv2D, Dropout, Flatten, Input, MaxPooling2D
 
 import os
 from glob import glob
@@ -37,8 +37,15 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
     model_last_conv = MaxPooling2D((2, 2), strides=(2, 2))(model)
 
     model_dense_1 = Conv2D(4096, (7, 7), padding='valid', activation='relu')(model_last_conv)
+    model_dense_1 = Dropout(0.5)(model_dense_1)
+
     model_dense_2 = Conv2D(4096, (1, 1), padding='valid', activation='relu')(model_dense_1)
-    model_out = Conv2D(2622, (1, 1), padding='valid', activation='softmax')(model_dense_2)
+    model_dense_2 = Dropout(0.5)(model_dense_2)
+
+    model_dense_3 = Conv2D(2622, (1, 1), padding='valid')(model_dense_2)
+    model_dense_3 = Flatten()(model_dense_3)
+
+    model_out = Activation('softmax')(model_dense_3)
 
     vgg_model = Model(model_in, model_out)
     vgg_model.load_weights(vgg_weights_filepath)
@@ -46,9 +53,9 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
     extract_last_conv = Flatten()(model_last_conv)
     extract_dense_1 = Flatten()(model_dense_1)
     extract_dense_2 = Flatten()(model_dense_2)
-    extract_out = Flatten()(model_out)
+    extract_dense_3 = model_dense_3
 
-    extractor_model = Model(model_in, [extract_last_conv, extract_dense_1, extract_dense_2, extract_out])
+    extractor_model = Model(model_in, [extract_last_conv, extract_dense_1, extract_dense_2, extract_dense_3])
 
     return extractor_model
 
