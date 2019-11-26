@@ -58,7 +58,7 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
 
     return extractor_model
 
-def get_generator(dir, image_size=224, color_mode='rgb', batch_size=512):
+def get_generator(dir, image_size=224, color_mode='rgb', batch_size=256):
     gen_args = dict(featurewise_center=False,
                     samplewise_center=False,
                     featurewise_std_normalization=False,
