@@ -141,4 +141,3 @@ def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
                 np.save(cur_out_file, cur_arr)
 
 extract_all("dataset", "extracted")
-extract_all("autoencoder_dataset", "autoencoder_extracted")
