@@ -1,58 +1,39 @@
+from tensorflow.keras.utils import Sequence
+from itertools import chain
 import numpy as np
-import keras
+import os
 
-class DataGenerator(keras.util.sequence):
-    'Generates data for keras'
-    
-    def __init__(self, folder_list, batch_size=32, n_classes=2, length=1024, vector_length):
-        self.folder_list = folder_list
-        self.n_classes = n_classes
+
+
+#Generates face pairs for verification
+class FacePairGenerator(Sequence):
+    @staticmethod 
+    def _load_fold(fold_file):
+        fold_dir = os.sep.join(fold_file.split(os.sep)[:-1])
+        with open(fold_file, 'r') as op_fold_file:
+            loaded_fold = [np.load(os.path.join(fold_dir, indv.strip()+".npy")) for indv in op_fold_file]
+        
+        return loaded_fold
+
+    def __init__(self, folds_files, batch_size=32):
         self.batch_size = batch_size
-        self.length = length
-        self.vector_length = vector_length
-        
+        self.indvs = list(chain.from_iterable([FacePairGenerator._load_fold(fold_file) for fold_file in folds_files]))
+
+        self._aux_len = len(self.indvs)
+        self._aux_range = np.arange(self._aux_len)
+
     def __len__(self):
-        return self.length
+        return self._aux_len
     
+    def _get_pair(self, y):
+        aux_indv = np.random.randint(self._aux_len, high=None, size=None)
+        indv_1, indv_2 = (aux_indv, aux_indv) if y else np.random.choice(self._aux_range, size=2, replace=False, p=None)
+        img_1, img_2 = np.random.choice(len(self.indvs[aux_indv]), size=2, replace=False, p=None) if y else (np.random.randint(len(self.indvs[indv_1]), high=None, size=None), np.random.randint(len(self.indvs[indv_2]), high=None, size=None))
+
+        return self.indvs[indv_1][img_1], self.indvs[indv_2][img_2]
+
     def __getitem__(self, index):
+        y = np.random.randint(2, high=None, size=self.batch_size)
+        x = np.asarray([self._get_pair(cur_y) for cur_y in y])
         
-        batch = [np.empty((self.batch_size, self.vector_length)), np.empty((self.batch_size, self.vector_length))]
-        Y = np.empty(self.batch_size)
-        for i in range(self.batch_size):
-            y = np.randint(0, 1)
-            
-            if y == 0:
-                s1, s2 = np.random.choice(self.folder_list, 2)
-                # vetor 1 de caracteristicas
-                V1 = np.load('data/' + s1 + '/vector.npy')
-                
-                # vetor 2 de caracteristicas
-                V2 = np.load('data/' + s2 + '/vector.npy')
-                
-                id1 = np.random.choice(V1.shape[0])
-                V1 = V1[id1]
-                
-                id2 = np.random.choice(V2.shape[0])
-                V2 = V2[id2]
-                
-                batch[0][i] = V1
-                batch[1][i] = V2
-                
-                Y[i] = 0
-                
-            else:
-                s = np.random.choice(self.folder_list)
-                
-                # vetor de caracteristicas
-                V = np.load('data/' + s + '/vector.npy')
-                
-                id1, id2 = np.random.choice(V.shape[0], 2)
-                
-                V1 = V[id1]
-                V2 = V[id2]
-                
-                batch[0][i] = V1
-                batch[1][i] = V2
-                Y[i] = 1
-                
-        return [batch1, batch2], Y
+        return [x[:, 0, :], x[:, 1, :]], y
