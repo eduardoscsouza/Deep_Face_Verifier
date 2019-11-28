@@ -10,4 +10,7 @@ Apresentação:
 4. Teoria do Aprendizado estatístico pra transfer learning
     2.1 Funciona porque o modelo original generalizou a função
     2.2 Os dois domínios têm intersecção, a função ótima para o domínio de treino é boa 
-5. Apresentação em real time 
+5. Apresentação em real time
+6. Teste de Hipótese
+7. Segundo approach: autoencoding
+8. Teste de hipótese segundo approach?
