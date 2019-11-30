@@ -25,7 +25,7 @@ def build_model(input_size, eucl_dist_lvl, n_neurons, n_layers):
     
     for _ in range(n_layers):
         model = Dense(n_neurons, activation='sigmoid')(model)
-    model_out = Dense(1, activation='sigmoid', name="classifier", use_bias=True)(model)
+    model_out = Dense(1, activation='sigmoid', name="classifier")(model)
     
     model = Model([in_1, in_2], model_out)
     model.compile(loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05),
