@@ -1,5 +1,10 @@
-import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
+from tensorflow.keras.backend import clear_session
+from glob import glob
+from generator import FacePairGenerator
+from build_model import build_model
+import os
+import pandas as pd
 
 
 
@@ -59,24 +64,46 @@ def evaluate_model(model, train_datagen, test_datagen, evaluation_steps=1000):
 
     return train_scores, test_scores
 
-'''
-def run_experiment(exp_name, transfer_type, epochs=150):
-    best_model_filepath = os.path.join(best_models_dir, exp_name + ".h5")
-    tensorboard_logdir = os.path.join(logs_dir, exp_name)
+def run_experiment(model, dataset_dir, exp_name,
+                epochs=150, batch_size=32, steps_per_epoch=500, validation_steps=100, evaluation_steps=1000,
+                experiments_dir="experiments", tensorboard_logs_dir="tensorboard_logs"):
+    outfiles_dir = os.path.join(experiments_dir, exp_name)
+    tensorboard_logdir = os.path.join(tensorboard_logs_dir, exp_name)
 
-    clear_session()
-    model = get_mobilenet_trained_model(transfer_type=transfer_type)
-    model.summary()
+    metrics_cols = [' '.join([word.capitalize() for word in metric.split('_')]) for metric in model.metrics_names]
+    metrics_df = pd.DataFrame(columns=["Fold", "Set"] + metrics_cols)
+    folds_files = glob(os.path.join(dataset_dir, "fold_*.txt"))
+    for i in range(len(folds_files)):
+        fold_name = "fold_{}".format(i)
 
-    train_datagen, test_datagen = get_generators(train_dir=train_dir, test_dir=test_dir)
-    assert train_datagen.class_indices == test_datagen.class_indices
+        cur_outfiles_dir = os.path.join(outfiles_dir, fold_name)
+        if not os.path.exists(cur_outfiles_dir):
+            os.makedirs(cur_outfiles_dir)
+        cur_tensorboard_logdir = os.path.join(tensorboard_logdir, fold_name)
+        if not os.path.exists(cur_tensorboard_logdir):
+            os.makedirs(cur_tensorboard_logdir)
 
-    train_model(model, train_datagen, test_datagen, epochs, 
-    tensorboard_logdir=tensorboard_logdir,
-    best_model_filepath=best_model_filepath)
+        train_datagen = FacePairGenerator([folds_files[j] for j in range(len(folds_files)) if j != i], batch_size=batch_size)
+        test_datagen = FacePairGenerator([folds_files[i]], batch_size=batch_size)
 
-    model = load_model(best_model_filepath)
-    scores = evaluate_model(model, train_datagen, test_datagen)
-    print("Train Loss:\t{}\t\tTrain Accuracy:\t{}".format(scores[0][0], scores[0][1]))
-    print("Test  Loss:\t{}\t\tTest  Accuracy:\t{}".format(scores[1][0], scores[1][1]))
-'''
+        train_model(model, train_datagen, test_datagen, epochs, 
+                tensorboard_logdir=cur_tensorboard_logdir, best_model_filepath=os.path.join(cur_outfiles_dir, "best_model.h5"),
+                steps_per_epoch=steps_per_epoch, validation_steps=validation_steps)
+
+        train_metrics, val_metrics = evaluate_model(model, train_datagen, test_datagen, evaluation_steps=evaluation_steps)
+
+        cur_metrics_df = pd.DataFrame([train_metrics, val_metrics], columns=metrics_cols)
+        cur_metrics_df.insert(0, "Set", ["Train", "Val"])
+        cur_metrics_df.to_csv(os.path.join(cur_outfiles_dir, "metrics.csv"), index=False)
+
+        cur_metrics_df.insert(0, "Fold", [i, i])
+        metrics_df = pd.concat([metrics_df, cur_metrics_df], ignore_index=True)
+    
+    metrics_df.to_csv(os.path.join(outfiles_dir, "metrics.csv"), index=False)
+
+
+if __name__ == '__main__':
+   clear_session()
+   model = build_model(4, 4, 2, 1)
+   run_experiment(model, "temp", "exp_1", epochs=2, batch_size=1,
+   steps_per_epoch=5, validation_steps=2, evaluation_steps=5)
