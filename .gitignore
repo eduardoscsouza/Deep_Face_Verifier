@@ -1,3 +1,4 @@
 *.h5
 autoencoder_dataset
 dataset
+extracted
