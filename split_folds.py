@@ -57,11 +57,12 @@ for dataset_indvs in datasets_indvs:
     for i in range(n_splits):
         folds[i] += splits[i]
 
-# ordena cada fold dentro de folds
-folds = [sorted(fold) for fold in folds]
+if __name__ == '__main__':
+    # ordena cada fold dentro de folds
+    folds = [sorted(fold) for fold in folds]
 
-# cria arquivos fold_1.txt, fold_2.txt, .. e printa neles os individuos em cada fold
-for i in range(n_splits):
-    with open(os.path.join(dataset_dir, "fold_{}.txt".format(i)), "w") as fold_file:
-        for indv in folds[i]:
-            print(indv.split(os.sep)[-1], file=fold_file)
+    # cria arquivos fold_1.txt, fold_2.txt, .. e printa neles os individuos em cada fold
+    for i in range(n_splits):
+        with open(os.path.join(dataset_dir, "fold_{}.txt".format(i)), "w") as fold_file:
+            for indv in folds[i]:
+                print(indv.split(os.sep)[-1], file=fold_file)

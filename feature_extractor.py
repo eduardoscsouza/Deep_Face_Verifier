@@ -140,4 +140,5 @@ def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
                     cur_arr = np.expand_dims(cur_sample, axis=0)
                 np.save(cur_out_file, cur_arr)
 
-extract_all("dataset", "extracted")
+if __name__ == '__main__':
+    extract_all("dataset", "extracted")
