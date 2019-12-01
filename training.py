@@ -104,9 +104,9 @@ def run_experiment(model, dataset_dir, exp_name,
 
 if __name__ == '__main__':
     clear_session()
-    model = build_model(2622, 3, 1, 0)
+    model = build_model(2622, 2, 20, 2)
     model.summary()
-    run_experiment(model, "extracted/layer_2/", "exp_1",
-                epochs=250, batch_size=64, steps_per_epoch=50, validation_steps=10, evaluation_steps=1000,
+    run_experiment(model, "extracted/layer_1/", "exp_1",
+                epochs=250, batch_size=64, steps_per_epoch=150, validation_steps=20, evaluation_steps=200,
                 experiments_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/experiments/",
                 tensorboard_logs_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/tensorboard_logs/")
