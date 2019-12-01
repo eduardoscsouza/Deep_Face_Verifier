@@ -98,12 +98,15 @@ def run_experiment(model, dataset_dir, exp_name,
 
         cur_metrics_df.insert(0, "Fold", [i, i])
         metrics_df = pd.concat([metrics_df, cur_metrics_df], ignore_index=True)
-    
+        
     metrics_df.to_csv(os.path.join(outfiles_dir, "metrics.csv"), index=False)
 
 
 if __name__ == '__main__':
-   clear_session()
-   model = build_model(4, 4, 2, 1)
-   run_experiment(model, "temp", "exp_1", epochs=2, batch_size=1,
-   steps_per_epoch=5, validation_steps=2, evaluation_steps=5)
+    clear_session()
+    model = build_model(2622, 3, 1, 0)
+    model.summary()
+    run_experiment(model, "extracted/layer_2/", "exp_1",
+                epochs=250, batch_size=64, steps_per_epoch=50, validation_steps=10, evaluation_steps=1000,
+                experiments_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/experiments/",
+                tensorboard_logs_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/tensorboard_logs/")
