@@ -10,6 +10,7 @@ import shutil
 import numpy as np
 
 
+
 # cria modelo keras com pesos do arquivo vgg_face_weights.h5
 # cria outro modelo chamado extractor_model, a partir do vgg_model, cujos outputs sao camadas intermediarias do primeiro
 # retorna o extractor_model
@@ -102,7 +103,6 @@ def get_generator(dir, batch_size=256):
     datagen = ImageDataGenerator(**gen_args).flow_from_directory(dir, **flow_args)
     return datagen
 
-
 def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
     extractor = get_feature_extractor(vgg_weights_filepath)
     generator = get_generator(in_dir)
@@ -139,6 +139,8 @@ def extract_all(in_dir, out_dir, vgg_weights_filepath="vgg_face_weights.h5"):
                 else:
                     cur_arr = np.expand_dims(cur_sample, axis=0)
                 np.save(cur_out_file, cur_arr)
+
+
 
 if __name__ == '__main__':
     extract_all("dataset", "extracted")

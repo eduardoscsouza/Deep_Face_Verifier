@@ -7,6 +7,8 @@ from tensorflow.keras.applications.imagenet_utils import preprocess_input
 from tensorflow.keras.preprocessing import image
 import matplotlib.pyplot as plt
 
+
+
 model = Sequential()
 model.add(ZeroPadding2D((1,1),input_shape=(224,224, 3)))
 model.add(Convolution2D(64, (3, 3), activation='relu'))
@@ -61,7 +63,6 @@ def preprocess_image(image_path):
     img = np.expand_dims(img, axis=0)
     img = preprocess_input(img)
     return img
-
 
 def findCosineSimilarity(source_representation, test_representation):
     a = np.matmul(np.transpose(source_representation), test_representation)
@@ -173,6 +174,7 @@ def my_verifyFace_no_datagen(img1, img2):
     v1, v2 = my_extractor.predict(np.stack([img1, img2], axis=0))[-1]
     v1, v2 = np.expand_dims(v1, axis=0), np.expand_dims(v2, axis=0)
     return np.stack([my_cos_dis.predict([v1, v2])[0], my_base_model.predict([v1, v2])[0]], axis=0)
+
 
 
 import os

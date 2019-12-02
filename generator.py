@@ -37,3 +37,8 @@ class FacePairGenerator(Sequence):
         x = np.asarray([self._get_pair(cur_y) for cur_y in y])
         
         return [x[:, 0, :], x[:, 1, :]], y
+
+
+
+if __name__ == '__main__':
+    codium 
