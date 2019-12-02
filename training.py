@@ -1,10 +1,11 @@
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from tensorflow.keras.backend import clear_session
 from glob import glob
-from generator import FacePairGenerator
-from build_model import build_model
 import os
 import pandas as pd
+
+from generator import FacePairGenerator
+import build_model
 
 
 
@@ -103,6 +104,13 @@ def run_experiment(model, dataset_dir, exp_name,
 
 
 if __name__ == '__main__':
+    '''
+    folds_files = glob(os.path.join("layer_2", "fold_*.txt"))
+    train_datagen = FacePairGenerator(folds_files, batch_size=32)
+    m = build_model.build_base_model(2622)
+    print(m.metrics_names)
+    print(evaluate_model(m, train_datagen, train_datagen))
+
     clear_session()
     model = build_model(2622, 2, 20, 2)
     model.summary()
@@ -110,3 +118,4 @@ if __name__ == '__main__':
                 epochs=250, batch_size=64, steps_per_epoch=150, validation_steps=20, evaluation_steps=200,
                 experiments_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/experiments/",
                 tensorboard_logs_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/tensorboard_logs/")
+    '''
