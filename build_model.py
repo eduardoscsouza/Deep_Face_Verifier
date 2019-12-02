@@ -60,12 +60,12 @@ def build_cos_model(input_size, cos_dist_lvl, n_neurons, n_layers,
     else:
         model = Multiply(name="pointwise_multiply")([in_1, in_2])
         if cos_dist_lvl >= 2:
-            model = Lambda(lambda tensor : tf.reduce_sum(tensor, axis=1, keepdims=True), name="sum")(model)
-        if cos_dist_lvl >= 3:
             norm_1 = Lambda(lambda tensor : tf.norm(tensor, axis=1, keepdims=True), name="norm_input_1")(in_1)
             norm_2 = Lambda(lambda tensor : tf.norm(tensor, axis=1, keepdims=True), name="norm_input_2")(in_2)
             norm_mul = Multiply(name="multiply_norms")([norm_1, norm_2])
             model = Lambda(lambda tensors : tf.divide(tensors[0], tensors[1]), name="divide")([model, norm_mul])
+        if cos_dist_lvl >= 3:
+            model = Lambda(lambda tensor : tf.reduce_sum(tensor, axis=1, keepdims=True), name="sum")(model)
         if cos_dist_lvl >= 4:
             model = ValueMinusInput(1, name="one_minus_input")(model)
 
@@ -113,6 +113,9 @@ def build_base_model(input_size):
     model_out = Lambda(lambda tensor : tf.cast(tensor, tf.float32), name="cast")(model)
     
     model = Model([in_1, in_2], model_out)
+    model.compile(loss=MeanSquaredError(), optimizer=SGD(),
+                metrics=[BinaryAccuracy(), Precision(), Recall(),
+                TrueNegatives(), FalsePositives(), FalseNegatives(), TruePositives()])
     return model
 
 
