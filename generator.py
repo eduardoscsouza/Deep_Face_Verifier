@@ -41,4 +41,37 @@ class FacePairGenerator(Sequence):
 
 
 if __name__ == '__main__':
-    codium 
+    n_indv = 5
+    n_imgs = 5
+    img_size = 10
+    n_samples = 500
+    frac = 10**np.ceil(np.log10(n_imgs))
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        for i in range(3*n_indv):
+            arr = np.full(shape=(n_imgs, img_size), fill_value=i, dtype=np.float64)
+            arr += np.expand_dims(np.arange(n_imgs) / frac, axis=1)
+            np.save(os.path.join(tmpdirname, "{}.npy").format(i), arr)
+
+        for i in range(2):
+            with open(os.path.join(tmpdirname, "fold_{}.txt".format(i)), "w") as fold_file:
+                for i in range(i*n_indv, (i+1)*n_indv):
+                    print(i, file=fold_file)
+
+        folds = [os.path.join(tmpdirname, "fold_{}.txt".format(i)) for i in range(2)]
+        datagen = FacePairGenerator(folds)
+        for _ in range(n_samples):
+            x, y = datagen.__getitem__(0)
+
+            indvs_1 = np.floor(x[0])
+            imgs_1 = x[0] - indvs_1
+            indvs_2 = np.floor(x[1])
+            imgs_2 = x[1] - indvs_2
+            assert np.all(indvs_1 < 2*n_indv)
+            assert np.all(indvs_2 < 2*n_indv)
+            for i in range(len(y)):
+                if y[i]:
+                    assert np.all(indvs_1[i] == indvs_2[i])
+                    assert np.all(imgs_1[i] != imgs_2[i])
+                else:
+                    assert np.all(indvs_1[i] != indvs_2[i])
