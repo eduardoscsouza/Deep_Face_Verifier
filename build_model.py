@@ -54,7 +54,7 @@ class ValueMinusInput(Layer):
         return tf.subtract(self.const_vals, input)
 
 def build_cos_model(input_size, cos_dist_lvl, n_neurons, n_layers, batch_norm=True,
-                    loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.02)):
+                    loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.025)):
     in_1 = Input(shape=(input_size, ), name="input_1")
     in_2 = Input(shape=(input_size, ), name="input_2")
 
