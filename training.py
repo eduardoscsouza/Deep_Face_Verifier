@@ -11,7 +11,7 @@ import build_model
 
 
 def train_model(model, train_datagen, test_datagen, 
-                epochs=200, steps_per_epoch=100, validation_steps=20, early_stop_patience=10,
+                epochs=200, steps_per_epoch=100, validation_steps=20, early_stop_patience=15,
                 tensorboard_logdir="logs", best_model_filepath="best_model.h5"):
     tensorboard = TensorBoard(log_dir=tensorboard_logdir,
                             histogram_freq=0,
@@ -68,7 +68,7 @@ def evaluate_model(model, train_datagen, test_datagen, evaluation_steps=500):
 
 def run_experiment(model, dataset_dir, exp_name,
                 batch_size=32, epochs=200, steps_per_epoch=100,
-                validation_steps=20, early_stop_patience=10, evaluation_steps=500,
+                validation_steps=20, early_stop_patience=15, evaluation_steps=500,
                 experiments_dir="experiments", tensorboard_logs_dir="tensorboard_logs"):
     outfiles_dir = os.path.join(experiments_dir, exp_name)
     tensorboard_logdir = os.path.join(tensorboard_logs_dir, exp_name)
@@ -116,8 +116,11 @@ def run_experiment(model, dataset_dir, exp_name,
 
 if __name__ == '__main__':
     clear_session()
-    model = build_model.build_eucl_model(2622, 4, 0, 0, True)
+    model = build_model.build_eucl_model(4096, 0, 2048, 2, True)
     model.summary()
-    run_experiment(model, "extracted/layer_2/", "exp_1",
+    from time import time
+    t0 = time()
+    run_experiment(model, "extracted/layer_0/", "exp_1",
                 experiments_dir="experiments",
                 tensorboard_logs_dir="tensorboard_logs")
+    print(time() - t0)
