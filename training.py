@@ -78,6 +78,7 @@ def run_experiment(model, dataset_dir, exp_name,
     folds_files = glob(os.path.join(dataset_dir, "fold_*.txt"))
     with tempfile.TemporaryDirectory() as temp_dir:
         init_weights_file = os.path.join(temp_dir, "init_weights.h5")
+        temp_weights_file = os.path.join(temp_dir, "temp_weights.h5")
         model.save_weights(init_weights_file)
         for i in range(len(folds_files)):
             fold_name = "fold_{}".format(i)
@@ -93,15 +94,15 @@ def run_experiment(model, dataset_dir, exp_name,
             train_datagen = FacePairGenerator([folds_files[j] for j in range(len(folds_files)) if j != i], batch_size=batch_size)
             test_datagen = FacePairGenerator([folds_files[i]], batch_size=batch_size)
 
-            cur_best_model_filepath = os.path.join(cur_outfiles_dir, "best_model.h5")
             train_model(model, train_datagen, test_datagen, 
                     epochs=epochs, steps_per_epoch=steps_per_epoch,
                     validation_steps=validation_steps, early_stop_patience=early_stop_patience,
-                    tensorboard_logdir=cur_tensorboard_logdir, best_model_filepath=cur_best_model_filepath)
+                    tensorboard_logdir=cur_tensorboard_logdir, best_model_filepath=temp_weights_file)
 
-            model.load_weights(cur_best_model_filepath)
+            model.load_weights(temp_weights_file)
             train_metrics, val_metrics = evaluate_model(model, train_datagen, test_datagen, evaluation_steps=evaluation_steps)
-            model.save(cur_best_model_filepath)
+            model.save(os.path.join(cur_outfiles_dir, "best_model.h5"),
+                    overwrite=True, include_optimizer=False, save_format='h5')
 
             cur_metrics_df = pd.DataFrame([train_metrics, val_metrics], columns=metrics_cols)
             cur_metrics_df.insert(0, "Set", ["Train", "Val"])
