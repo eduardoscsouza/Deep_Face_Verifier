@@ -137,7 +137,7 @@ def build_base_model(input_size):
 
 
 
-def build_autoencoder(input_size=112, base_n_filters=32, n_layers=3,
+def build_autoencoder(input_size=56, base_n_filters=16, n_layers=3,
                     loss=BinaryCrossentropy(), optimizer=Adam()):
     model_in = Input(shape=(input_size, input_size, 3))
 
