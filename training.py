@@ -123,6 +123,10 @@ if __name__ == '__main__':
     from time import time
     t0 = time()
 
+    expr_out_dir = "/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/experiments"
+    logs_out_dir = "/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/tensorboard_logs"
+    extracted_dir = "extracted"
+
     models_types = ["eucl", "cos"]
     extract_layers = np.arange(3)
     combination_funcs = np.arange(4)
@@ -131,12 +135,13 @@ if __name__ == '__main__':
     combs = list(product(models_types, extract_layers, combination_funcs, n_neurons, n_layers))
     random.shuffle(combs)
     for m_type, ext_lay, comb_f, n_neur, n_lay in combs:
-        clear_session()
+        n_neur = 0 if (n_lay == 0) else n_neur
         exp_name = "{}_outLay:{}_combFun:{}_nNeur:{}_nLay:{}".format(m_type, ext_lay, comb_f, n_neur, n_lay)
-        input_size = 2622 if ext_lay == 2 else 4096
-        model = build_model.build_eucl_model(input_size, comb_f, n_neur, n_lay, True) if m_type == "eucl" else build_model.build_cos_model(input_size, comb_f, n_neur, n_lay, True)
-        run_experiment(model, "extracted/layer_{}/".format(ext_lay), exp_name,
-                experiments_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/experiments",
-                tensorboard_logs_dir="/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/tensorboard_logs")
+        if not os.path.isdir(os.path.join(expr_out_dir, exp_name)):
+            clear_session()
+            input_size = 2622 if ext_lay == 2 else 4096
+            model = build_model.build_eucl_model(input_size, comb_f, n_neur, n_lay, True) if m_type == "eucl" else build_model.build_cos_model(input_size, comb_f, n_neur, n_lay, True)
+            run_experiment(model, os.path.join(extracted_dir, "layer_{}".format(ext_lay)), exp_name,
+                        experiments_dir=expr_out_dir, tensorboard_logs_dir=logs_out_dir)
     
     print("Total Time:", time() - t0)
