@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import BatchNormalization, Concatenate, Conv2D, Dense
 from tensorflow.keras.layers import Input, Lambda, Layer, MaxPooling2D, Multiply, Subtract, UpSampling2D
-from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.losses import BinaryCrossentropy, MeanSquaredError
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.metrics import BinaryAccuracy, Precision, Recall
 from tensorflow.keras.metrics import TrueNegatives, FalsePositives, FalseNegatives, TruePositives
@@ -137,28 +137,23 @@ def build_base_model(input_size):
 
 
 
-def build_autoencoder():
-    print("Creating autoencoder model")
-    inChannel = 3
-    x, y = 224, 224
-    input_img = Input(shape = (x, y, inChannel))
+def build_autoencoder(input_size=112, base_n_filters=32, n_layers=3,
+                    loss=BinaryCrossentropy(), optimizer=Adam()):
+    model_in = Input(shape=(input_size, input_size, 3))
 
-    # encoder
-    conv = Conv2D(32, (3, 3), activation='relu', padding='same')(input_img) # 224 x 224 x 32
-    pool = MaxPooling2D(pool_size=(2, 2))(conv) # 112 x 112 x 32
-    conv = Conv2D(64, (3, 3), activation='relu', padding='same')(pool) # 112 x 112 x 64
-    pool = MaxPooling2D(pool_size=(2, 2))(conv) # 56 x 56 x 64
-    conv = Conv2D(128, (3, 3), activation='relu', padding='same')(pool) # 56 x 56 x 128
+    model = model_in
+    for i in range(n_layers):
+        model = Conv2D(base_n_filters*(2**i), (3, 3), padding='same', activation='relu', name="encod_block_{}_conv_1".format(i))(model)
+        model = Conv2D(base_n_filters*(2**i), (3, 3), padding='same', activation='relu', name="encod_block_{}_conv_2".format(i))(model)
+        model = MaxPooling2D((2, 2), strides=(2, 2), name="encod_block_{}_max_pool".format(i))(model)
 
-    # decoder
-    conv = Conv2D(128, (3, 3), activation='relu', padding='same')(conv) #56 x 56 x 128
-    up = UpSampling2D((2, 2))(conv) # 112 x 112 x 128
-    conv = Conv2D(64, (3, 3), activation='relu', padding='same')(up) # 112 x 112 x 64
-    up = UpSampling2D((2, 2))(conv) # 256 x 256 x 64
-    conv = Conv2D(3, (3, 3), activation='tanh', padding='same')(up) # 256 x 256 x 3
+    for i in range(n_layers):
+        model = Conv2D(base_n_filters*(2**(n_layers-i-1)), (3, 3), padding='same', activation='relu', name="decod_block_{}_conv_1".format(i))(model)
+        model = Conv2D(base_n_filters*(2**(n_layers-i-1)), (3, 3), padding='same', activation='relu', name="decod_block_{}_conv_2".format(i))(model)
+        model = UpSampling2D((2, 2), name="decod_block_{}_up_sampl".format(i))(model)
 
-    model = Model(input_img, conv)
-    model.compile(loss='mean_squared_error', optimizer = Adam())
+    model = Model(model_in, model)
+    model.compile(loss=loss, optimizer=optimizer)
 
     return model
 
