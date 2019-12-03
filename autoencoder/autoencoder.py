@@ -5,8 +5,9 @@ from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.layers import Input,Conv2D,MaxPooling2D,UpSampling2D
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications import vgg16
+from tensorflow.keras.models import load_model
 
 def get_generator(dir, batch_size=8):
     print("Creating generator")
@@ -69,23 +70,31 @@ def create_model():
     up = UpSampling2D((2, 2))(conv) # 112 x 112 x 128
     conv = Conv2D(64, (3, 3), activation='relu', padding='same')(up) # 112 x 112 x 64
     up = UpSampling2D((2, 2))(conv) # 256 x 256 x 64
-    conv = Conv2D(3, (3, 3), activation='sigmoid', padding='same')(up) # 256 x 256 x 3
+    conv = Conv2D(3, (3, 3), activation='tanh', padding='same')(up) # 256 x 256 x 3
 
     model = Model(input_img, conv)
-    model.compile(loss='mean_squared_error', optimizer = RMSprop())
+    model.compile(loss='mean_squared_error', optimizer = Adam())
 
     return model
 
 def train_model(model, generator):
     print("Training model")
-    epochs = 50
-    model.fit_generator(generator, steps_per_epoch=2000, epochs = epochs)
+    epochs = 10
+    model.fit_generator(generator, steps_per_epoch=1000, epochs = epochs)
 
 if __name__ == '__main__':
+    source_file = str(input())
+    dest_file = str(input())
+    if source_file == "none":
+        model = create_model()
+    else:
+        model = load_model(file)
     dir = '../autoencoder_dataset'
     generator = get_generator(dir = dir)
-    model = create_model()
     
     train_model(model, generator)
+
+    if dest_file != "none":
+        model.save(dest_file)
 
 
