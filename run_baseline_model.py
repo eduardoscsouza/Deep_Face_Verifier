@@ -17,5 +17,5 @@ for ext_lay in range(3):
         model = build_model.build_base_model(input_size)
         training.run_experiment(model, os.path.join(extracted_dir, "layer_{}".format(ext_lay)), exp_name,
                     experiments_dir=expr_out_dir, tensorboard_logs_dir=logs_out_dir,
-                    epochs=0, steps_per_epoch=0, validation_steps=0, early_stop_patience=0,
+                    epochs=1, steps_per_epoch=1, validation_steps=1, early_stop_patience=1,
                     evaluation_steps=500)

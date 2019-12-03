@@ -52,6 +52,11 @@ class ValueMinusInput(Layer):
 
     def call(self, input):
         return tf.subtract(self.const_vals, input)
+    
+    def get_config(self):
+        cfg = super(ValueMinusInput, self).get_config()
+        cfg.update({'value': self.value})
+        return cfg
 
 def build_cos_model(input_size, cos_dist_lvl, n_neurons, n_layers, batch_norm=True,
                     loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.025)):
@@ -100,6 +105,11 @@ class LessThan(Layer):
 
     def call(self, input):
         return tf.less(input, self.const_vals)
+
+    def get_config(self):
+        cfg = super(LessThan, self).get_config()
+        cfg.update({'value': self.value})
+        return cfg
 
 def build_base_model(input_size):
     in_1 = Input(shape=(input_size, ), name="input_1")
