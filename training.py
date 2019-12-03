@@ -12,7 +12,8 @@ import build_model
 
 def train_model(model, train_datagen, test_datagen, 
                 epochs=200, steps_per_epoch=100, validation_steps=20, early_stop_patience=15,
-                tensorboard_logdir="logs", best_model_filepath="best_model.h5"):
+                tensorboard_logdir="logs", best_model_filepath="best_model.h5",
+                earlystop_metric="loss", checkpoint_metric="val_binary_accuracy"):
     tensorboard = TensorBoard(log_dir=tensorboard_logdir,
                             histogram_freq=0,
                             write_graph=False,
@@ -22,7 +23,7 @@ def train_model(model, train_datagen, test_datagen,
                             embeddings_freq=0,
                             embeddings_metadata=None)
 
-    early_stop = EarlyStopping(monitor='loss',
+    early_stop = EarlyStopping(monitor=earlystop_metric,
                             min_delta=0.005,
                             patience=early_stop_patience,
                             verbose=True,
@@ -31,11 +32,11 @@ def train_model(model, train_datagen, test_datagen,
                             restore_best_weights=False)
 
     checkpoint = ModelCheckpoint(best_model_filepath,
-                            monitor="val_binary_accuracy",
+                            monitor=checkpoint_metric,
                             verbose=True,
                             save_best_only=True,
                             save_weights_only=True,
-                            mode='max',
+                            mode='auto',
                             save_freq='epoch')
 
     model.fit_generator(train_datagen,
