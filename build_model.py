@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Concatenate, Dense, Input, Lambda, Layer, Multiply, Subtract
+from tensorflow.keras.layers import BatchNormalization, Concatenate, Dense, Input, Lambda, Layer, Multiply, Subtract
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.metrics import BinaryAccuracy, Precision, Recall
@@ -8,8 +8,8 @@ from tensorflow.keras.metrics import TrueNegatives, FalsePositives, FalseNegativ
 
 
 
-def build_eucl_model(input_size, eucl_dist_lvl, n_neurons, n_layers, 
-                    loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.02)):
+def build_eucl_model(input_size, eucl_dist_lvl, n_neurons, n_layers, batch_norm=True, 
+                    loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.025)):
     in_1 = Input(shape=(input_size, ), name="input_1")
     in_2 = Input(shape=(input_size, ), name="input_2")
 
@@ -24,6 +24,9 @@ def build_eucl_model(input_size, eucl_dist_lvl, n_neurons, n_layers,
         if eucl_dist_lvl >= 4:
             model = Lambda(lambda tensor : tf.sqrt(tensor), name="root")(model)
     
+    if batch_norm:
+        model = BatchNormalization(name="input_normalization")(model)
+
     for i in range(n_layers):
         model = Dense(n_neurons, activation='sigmoid', name="dense_{}".format(i))(model)
     model_out = Dense(1, activation='sigmoid', name="classify")(model)
@@ -50,8 +53,8 @@ class ValueMinusInput(Layer):
     def call(self, input):
         return tf.subtract(self.const_vals, input)
 
-def build_cos_model(input_size, cos_dist_lvl, n_neurons, n_layers,
-                    loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.02)):
+def build_cos_model(input_size, cos_dist_lvl, n_neurons, n_layers, batch_norm=True,
+                    loss=MeanSquaredError(), optimizer=SGD(learning_rate=0.05, momentum=0.025)):
     in_1 = Input(shape=(input_size, ), name="input_1")
     in_2 = Input(shape=(input_size, ), name="input_2")
 
@@ -68,6 +71,9 @@ def build_cos_model(input_size, cos_dist_lvl, n_neurons, n_layers,
             model = Lambda(lambda tensor : tf.reduce_sum(tensor, axis=1, keepdims=True), name="sum")(model)
         if cos_dist_lvl >= 4:
             model = ValueMinusInput(1, name="one_minus_input")(model)
+
+    if batch_norm:
+        model = BatchNormalization(name="input_normalization")(model)
 
     for i in range(n_layers):
         model = Dense(n_neurons, activation='sigmoid', name="dense_{}".format(i))(model)
