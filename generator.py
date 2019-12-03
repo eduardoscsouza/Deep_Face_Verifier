@@ -1,6 +1,8 @@
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from itertools import chain
 import numpy as np
+import pandas as pd
 import os
 
 
@@ -40,6 +42,62 @@ class FacePairGenerator(Sequence):
 
 
 
+def get_autoencoder_generator(folds_files, image_size=(224, 224), batch_size=32):
+    files = []
+    for fold_file in folds_files:
+        fold_dir = os.sep.join(os.path.abspath(fold_file).split(os.sep)[:-1])
+        with open(fold_file, 'r') as op_fold_file:
+            files += list(chain.from_iterable([
+                    [os.path.join(fold_dir, indv.strip(), img) for img in os.listdir(os.path.join(fold_dir, indv.strip()))]
+                    for indv in op_fold_file]))
+    df = pd.DataFrame(files, columns=["Filename"])
+
+    gen_args = dict(featurewise_center=False,
+                    samplewise_center=False,
+                    featurewise_std_normalization=False,
+                    samplewise_std_normalization=False,
+                    zca_whitening=False,
+                    zca_epsilon=1e-06,
+                    rotation_range=0.0,
+                    width_shift_range=0.0,
+                    height_shift_range=0.0,
+                    brightness_range=None,
+                    shear_range=0.0,
+                    zoom_range=0.0,
+                    channel_shift_range=0.0,
+                    fill_mode='nearest',
+                    cval=0.0,
+                    horizontal_flip=False,
+                    vertical_flip=False,
+                    rescale=1.0/255.0,
+                    preprocessing_function=None,
+                    data_format='channels_last',
+                    validation_split=0.0,
+                    dtype=None)
+
+    flow_args = dict(directory=None,
+                    x_col="Filename",
+                    y_col="Filename",
+                    weight_col=None,
+                    target_size=image_size,
+                    color_mode='rgb',
+                    classes=None,
+                    class_mode='input',
+                    batch_size=batch_size,
+                    shuffle=True,
+                    seed=500,
+                    save_to_dir=None,
+                    save_prefix='',
+                    save_format='jpg',
+                    subset=None,
+                    interpolation='bicubic',
+                    validate_filenames=True)
+
+    datagen = ImageDataGenerator(**gen_args).flow_from_dataframe(df, **flow_args)
+    return datagen
+
+
+
 if __name__ == '__main__':
     n_indv = 5
     n_imgs = 5
@@ -75,3 +133,10 @@ if __name__ == '__main__':
                     assert np.all(imgs_1[i] != imgs_2[i])
                 else:
                     assert np.all(indvs_1[i] != indvs_2[i])
+
+    datagen = get_autoencoder_generator(["autoencoder_dataset/fold_0.txt", "autoencoder_dataset/fold_1.txt",
+                            "autoencoder_dataset/fold_2.txt", "autoencoder_dataset/fold_3.txt",
+                            "dataset/fold_0.txt", "dataset/fold_1.txt",
+                            "dataset/fold_2.txt", "dataset/fold_3.txt"])
+    for _ in range(n_samples//10):
+        datagen.next()
