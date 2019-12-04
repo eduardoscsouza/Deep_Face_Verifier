@@ -25,7 +25,7 @@ def run_autoencoder_model_experiment(model, dataset_dir, exp_name,
         init_weights_file = os.path.join(temp_dir, "init_weights.h5")
         temp_weights_file = os.path.join(temp_dir, "temp_weights.h5")
         model.save_weights(init_weights_file)
-        for i in range(len(n_folds)):
+        for i in range(n_folds):
             fold_name = "fold_{}".format(i)
             folds_files = glob(os.path.join(dataset_dir, fold_name, "fold_*.txt"))
             model.load_weights(init_weights_file)
@@ -69,8 +69,8 @@ if __name__ == '__main__':
     from time import time
     t0 = time()
 
-    expr_out_dir = "/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/experiments"
-    logs_out_dir = "/media/wheatley/38882E5E882E1AC0/Deep_Face_Verifier/tensorboard_logs"
+    expr_out_dir = "experiments"
+    logs_out_dir = "tensorboard_logs"
     extracted_dir = "autoencoder_extracted"
 
     models_types = ["eucl", "cos"]
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         exp_name = "autoencoder_{}_combFun:{}_nNeur:{}_nLay:{}".format(m_type, comb_f, n_neur, n_lay)
         if not os.path.isdir(os.path.join(expr_out_dir, exp_name)):
             clear_session()
-            model = build_model.build_eucl_model(32, comb_f, n_neur, n_lay, True) if m_type == "eucl" else build_model.build_cos_model(32, comb_f, n_neur, n_lay, True)
+            model = build_model.build_eucl_model(128, comb_f, n_neur, n_lay, True) if m_type == "eucl" else build_model.build_cos_model(128, comb_f, n_neur, n_lay, True)
             run_autoencoder_model_experiment(model, extracted_dir, exp_name,
                         experiments_dir=expr_out_dir, tensorboard_logs_dir=logs_out_dir)
     
