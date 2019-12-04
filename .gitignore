@@ -3,3 +3,6 @@ autoencoder_dataset
 autoencoder_extracted
 dataset
 extracted
+tsvs
+experiments
+tensorboard_logs
