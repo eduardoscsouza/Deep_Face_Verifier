@@ -59,4 +59,4 @@ for exp in exps:
         
         df = pd.concat([df, new_df], ignore_index=True)
 
-df.to_csv("all_exps_metrics.csv")
+df.to_csv("all_exps_metrics.csv", index=False)
