@@ -20,11 +20,12 @@ def run_autoencoder_model_experiment(model, dataset_dir, exp_name,
 
     metrics_cols = [' '.join([word.capitalize() for word in metric.split('_')]) for metric in model.metrics_names]
     metrics_df = pd.DataFrame(columns=["Fold", "Set"] + metrics_cols)
+    n_folds = len(os.listdir(dataset_dir))
     with tempfile.TemporaryDirectory() as temp_dir:
         init_weights_file = os.path.join(temp_dir, "init_weights.h5")
         temp_weights_file = os.path.join(temp_dir, "temp_weights.h5")
         model.save_weights(init_weights_file)
-        for i in range(len(folds_files)):
+        for i in range(len(n_folds)):
             fold_name = "fold_{}".format(i)
             folds_files = glob(os.path.join(dataset_dir, fold_name, "fold_*.txt"))
             model.load_weights(init_weights_file)
