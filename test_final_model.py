@@ -44,3 +44,6 @@ test_model("keira_knightley_1.jpg", "keira_knightley_2.jpg")
 test_model("keira_knightley_1.jpg", "natalie_portman_2.jpg")
 test_model("natalie_portman_1.jpg", "natalie_portman_2.jpg")
 test_model("natalie_portman_1.jpg", "keira_knightley_2.jpg")
+
+test_model("neymar_1.jpg", "neymar_2.jpg")
+test_model("neymar_1.jpg", "neymar_3.jpg")
