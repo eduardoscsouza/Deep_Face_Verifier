@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import tempfile
 
-from generator import FacePairGenerator
+from generator import FacePairGenerator, get_autoencoder_generator
 import build_model
 
 
@@ -26,7 +26,7 @@ def train_model(model, train_datagen, test_datagen,
     early_stop = EarlyStopping(monitor=earlystop_metric,
                             min_delta=0.005,
                             patience=early_stop_patience,
-                            verbose=True,
+                            verbose=False,
                             mode='min',
                             baseline=None,
                             restore_best_weights=False)
@@ -42,7 +42,7 @@ def train_model(model, train_datagen, test_datagen,
     model.fit_generator(train_datagen,
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
-                        verbose=False,
+                        verbose=True,
                         callbacks=[tensorboard, early_stop, checkpoint],
                         validation_data=test_datagen,
                         validation_steps=validation_steps,
@@ -70,7 +70,8 @@ def evaluate_model(model, train_datagen, test_datagen, evaluation_steps=500):
 def run_experiment(model, dataset_dir, exp_name,
                 batch_size=32, epochs=200, steps_per_epoch=100,
                 validation_steps=20, early_stop_patience=15, evaluation_steps=500,
-                experiments_dir="experiments", tensorboard_logs_dir="tensorboard_logs"):
+                experiments_dir="experiments", tensorboard_logs_dir="tensorboard_logs",
+                earlystop_metric="loss", checkpoint_metric="val_binary_accuracy"):
     outfiles_dir = os.path.join(experiments_dir, exp_name)
     tensorboard_logdir = os.path.join(tensorboard_logs_dir, exp_name)
 
@@ -98,7 +99,63 @@ def run_experiment(model, dataset_dir, exp_name,
             train_model(model, train_datagen, test_datagen, 
                     epochs=epochs, steps_per_epoch=steps_per_epoch,
                     validation_steps=validation_steps, early_stop_patience=early_stop_patience,
-                    tensorboard_logdir=cur_tensorboard_logdir, best_model_filepath=temp_weights_file)
+                    tensorboard_logdir=cur_tensorboard_logdir, best_model_filepath=temp_weights_file,
+                    earlystop_metric=earlystop_metric, checkpoint_metric=checkpoint_metric)
+
+            model.load_weights(temp_weights_file)
+            train_metrics, val_metrics = evaluate_model(model, train_datagen, test_datagen, evaluation_steps=evaluation_steps)
+            model.save(os.path.join(cur_outfiles_dir, "best_model.h5"),
+                    overwrite=True, include_optimizer=False, save_format='h5')
+
+            cur_metrics_df = pd.DataFrame([train_metrics, val_metrics], columns=metrics_cols)
+            cur_metrics_df.insert(0, "Set", ["Train", "Val"])
+            cur_metrics_df.to_csv(os.path.join(cur_outfiles_dir, "metrics.csv"), index=False)
+
+            cur_metrics_df.insert(0, "Fold", [i, i])
+            metrics_df = pd.concat([metrics_df, cur_metrics_df], ignore_index=True)
+        
+    metrics_df.to_csv(os.path.join(outfiles_dir, "metrics.csv"), index=False)
+
+
+
+def run_autoencoder_experiment(model, dataset_dir, autoencoder_dataset_dir, exp_name,
+                            batch_size=32, epochs=200, steps_per_epoch=100,
+                            validation_steps=20, early_stop_patience=15, evaluation_steps=500,
+                            experiments_dir="experiments", tensorboard_logs_dir="tensorboard_logs",
+                            earlystop_metric="loss", checkpoint_metric="val_loss"):
+    outfiles_dir = os.path.join(experiments_dir, exp_name)
+    tensorboard_logdir = os.path.join(tensorboard_logs_dir, exp_name)
+
+    image_size = tuple(model.get_layer(name="input").input.shape[1:-1].as_list())
+    metrics_cols = [' '.join([word.capitalize() for word in metric.split('_')]) for metric in model.metrics_names]
+    metrics_df = pd.DataFrame(columns=["Fold", "Set"] + metrics_cols)
+    folds_files = glob(os.path.join(dataset_dir, "fold_*.txt"))
+    autoencoder_folds_files = glob(os.path.join(autoencoder_dataset_dir, "fold_*.txt"))
+    with tempfile.TemporaryDirectory() as temp_dir:
+        init_weights_file = os.path.join(temp_dir, "init_weights.h5")
+        temp_weights_file = os.path.join(temp_dir, "temp_weights.h5")
+        model.save_weights(init_weights_file)
+        for i in range(len(folds_files)):
+            fold_name = "fold_{}".format(i)
+            model.load_weights(init_weights_file)
+
+            cur_outfiles_dir = os.path.join(outfiles_dir, fold_name)
+            if not os.path.exists(cur_outfiles_dir):
+                os.makedirs(cur_outfiles_dir)
+            cur_tensorboard_logdir = os.path.join(tensorboard_logdir, fold_name)
+            if not os.path.exists(cur_tensorboard_logdir):
+                os.makedirs(cur_tensorboard_logdir)
+
+            train_folds = [folds_files[j] for j in range(len(folds_files)) if j != i] + [autoencoder_folds_files[j] for j in range(len(folds_files)) if j != i]
+            test_folds = [folds_files[i], autoencoder_folds_files[i]]
+            train_datagen = get_autoencoder_generator(train_folds, image_size=image_size, batch_size=batch_size)
+            test_datagen = get_autoencoder_generator(test_folds, image_size=image_size, batch_size=batch_size)
+
+            train_model(model, train_datagen, test_datagen, 
+                    epochs=epochs, steps_per_epoch=steps_per_epoch,
+                    validation_steps=validation_steps, early_stop_patience=early_stop_patience,
+                    tensorboard_logdir=cur_tensorboard_logdir, best_model_filepath=temp_weights_file,
+                    earlystop_metric=earlystop_metric, checkpoint_metric=checkpoint_metric)
 
             model.load_weights(temp_weights_file)
             train_metrics, val_metrics = evaluate_model(model, train_datagen, test_datagen, evaluation_steps=evaluation_steps)

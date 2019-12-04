@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import BatchNormalization, Concatenate, Conv2D, Dense
-from tensorflow.keras.layers import Input, Lambda, Layer, MaxPooling2D, Multiply, Subtract, UpSampling2D
-from tensorflow.keras.losses import BinaryCrossentropy, MeanSquaredError
+from tensorflow.keras.layers import BatchNormalization, Concatenate, Conv2D, Dense, DepthwiseConv2D
+from tensorflow.keras.layers import Flatten, Input, Lambda, Layer, MaxPooling2D, Multiply, Reshape, Subtract, UpSampling2D
+from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.metrics import BinaryAccuracy, Precision, Recall
 from tensorflow.keras.metrics import TrueNegatives, FalsePositives, FalseNegatives, TruePositives
@@ -137,22 +137,34 @@ def build_base_model(input_size):
 
 
 
-def build_autoencoder(input_size=56, base_n_filters=16, n_layers=3,
-                    loss=BinaryCrossentropy(), optimizer=Adam()):
-    model_in = Input(shape=(input_size, input_size, 3))
+def build_autoencoder(input_size=32, base_n_filters=8, n_layers=1, encoding_dims=128,
+                    loss=MeanSquaredError(), optimizer=Adam()):
+    model_in = Input(shape=(input_size, input_size, 3), name="input")
 
     model = model_in
     for i in range(n_layers):
-        model = Conv2D(base_n_filters*(2**i), (3, 3), padding='same', activation='relu', name="encod_block_{}_conv_1".format(i))(model)
-        model = Conv2D(base_n_filters*(2**i), (3, 3), padding='same', activation='relu', name="encod_block_{}_conv_2".format(i))(model)
+        model = DepthwiseConv2D((5, 5), padding='same', activation='relu', name="encod_block_{}_depth_conv".format(i))(model)
+        model = Conv2D(base_n_filters, (1, 1), padding='same', activation='relu', name="encod_block_{}_conv".format(i))(model)
         model = MaxPooling2D((2, 2), strides=(2, 2), name="encod_block_{}_max_pool".format(i))(model)
-
+    
+    model = Flatten(name="encod_reshap")(model)
+    model = Dense(encoding_dims, activation='relu', name="encod_dense")(model)
+    if n_layers == 0:
+        model = Dense(input_size * input_size * 3, activation='relu', name="decod_dense")(model)
+        model_out = Reshape((input_size, input_size, 3), name="decod_reshap")(model)
+    else:
+        model = Dense((input_size//(2**n_layers) * input_size//(2**n_layers) * base_n_filters), activation='relu', name="decod_dense")(model)
+        model = Reshape((input_size//(2**n_layers), input_size//(2**n_layers), base_n_filters), name="decod_reshap")(model)
+    
     for i in range(n_layers):
-        model = Conv2D(base_n_filters*(2**(n_layers-i-1)), (3, 3), padding='same', activation='relu', name="decod_block_{}_conv_1".format(i))(model)
-        model = Conv2D(base_n_filters*(2**(n_layers-i-1)), (3, 3), padding='same', activation='relu', name="decod_block_{}_conv_2".format(i))(model)
         model = UpSampling2D((2, 2), name="decod_block_{}_up_sampl".format(i))(model)
+        model = DepthwiseConv2D((5, 5), padding='same', activation='relu', name="decod_block_{}_depth_conv".format(i))(model)
+        model = Conv2D(base_n_filters, (1, 1), padding='same', activation='relu', name="decod_block_{}_conv".format(i))(model)
+    
+    if n_layers != 0:
+        model_out = Conv2D(3, (1, 1), padding='same', activation='relu', name="decod_final_conv")(model)
 
-    model = Model(model_in, model)
+    model = Model(model_in, model_out)
     model.compile(loss=loss, optimizer=optimizer)
 
     return model
