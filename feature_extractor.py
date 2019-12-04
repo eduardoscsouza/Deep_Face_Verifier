@@ -62,7 +62,8 @@ def get_feature_extractor(vgg_weights_filepath="vgg_face_weights.h5"):
 
     return extractor_model
 
-def get_generator(dir, batch_size=256):
+def get_generator(dir, batch_size=256, image_size=(224, 224),
+                preprocessing_function=vgg16.preprocess_input, rescale=None):
     gen_args = dict(featurewise_center=False,
                     samplewise_center=False,
                     featurewise_std_normalization=False,
@@ -80,13 +81,13 @@ def get_generator(dir, batch_size=256):
                     cval=0.0,
                     horizontal_flip=False,
                     vertical_flip=False,
-                    rescale=None,
-                    preprocessing_function=vgg16.preprocess_input,
+                    rescale=rescale,
+                    preprocessing_function=preprocessing_function,
                     data_format='channels_last',
                     validation_split=0.0,
                     dtype=None)
 
-    flow_args = dict(target_size=(224, 224),
+    flow_args = dict(target_size=image_size,
                     color_mode='rgb',
                     classes=None,
                     class_mode='binary',
