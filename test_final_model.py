@@ -5,10 +5,12 @@ from feature_extractor import get_feature_extractor
 import matplotlib.pyplot as plt
 import build_model
 import numpy as np
+import os
 
 
 
 model_filepath="final_model.h5"
+imgs_dir = "example_imgs"
 extractor = get_feature_extractor()
 model = load_model(model_filepath)
 def test_model(img_a, img_b):
@@ -35,16 +37,16 @@ def test_model(img_a, img_b):
     plt.xticks([]); plt.yticks([])
     plt.show(block=True)
 
-test_model("katy_perry_1.jpg", "katy_perry_2.jpg")
-test_model("katy_perry_3.jpg", "katy_perry_4.jpg")
-test_model("katy_perry_1.jpg", "zooey_deschanel_2.jpg")
-test_model("zooey_deschanel_1.jpg", "zooey_deschanel_2.jpg")
-test_model("zooey_deschanel_1.jpg", "katy_perry_2.jpg")
+test_model(os.path.join(imgs_dir, "katy_perry_1.jpg"), os.path.join(imgs_dir, "katy_perry_2.jpg"))
+test_model(os.path.join(imgs_dir, "katy_perry_3.jpg"), os.path.join(imgs_dir, "katy_perry_4.jpg"))
+test_model(os.path.join(imgs_dir, "katy_perry_1.jpg"), os.path.join(imgs_dir, "zooey_deschanel_2.jpg"))
+test_model(os.path.join(imgs_dir, "zooey_deschanel_1.jpg"), os.path.join(imgs_dir, "zooey_deschanel_2.jpg"))
+test_model(os.path.join(imgs_dir, "zooey_deschanel_1.jpg"), os.path.join(imgs_dir, "katy_perry_2.jpg"))
 
-test_model("keira_knightley_1.jpg", "keira_knightley_2.jpg")
-test_model("keira_knightley_1.jpg", "natalie_portman_2.jpg")
-test_model("natalie_portman_1.jpg", "natalie_portman_2.jpg")
-test_model("natalie_portman_1.jpg", "keira_knightley_2.jpg")
+test_model(os.path.join(imgs_dir, "keira_knightley_1.jpg"), os.path.join(imgs_dir, "keira_knightley_2.jpg"))
+test_model(os.path.join(imgs_dir, "keira_knightley_1.jpg"), os.path.join(imgs_dir, "natalie_portman_2.jpg"))
+test_model(os.path.join(imgs_dir, "natalie_portman_1.jpg"), os.path.join(imgs_dir, "natalie_portman_2.jpg"))
+test_model(os.path.join(imgs_dir, "natalie_portman_1.jpg"), os.path.join(imgs_dir, "keira_knightley_2.jpg"))
 
-test_model("neymar_1.jpg", "neymar_2.jpg")
-test_model("neymar_1.jpg", "neymar_3.jpg")
+test_model(os.path.join(imgs_dir, "neymar_1.jpg"), os.path.join(imgs_dir, "neymar_2.jpg"))
+test_model(os.path.join(imgs_dir, "neymar_1.jpg"), os.path.join(imgs_dir, "neymar_3.jpg"))
