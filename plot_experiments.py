@@ -1,5 +1,6 @@
 from bokeh.plotting import figure, output_file, show
 import pandas as pd
+import os
 
 
 
@@ -39,21 +40,22 @@ tooltips = [
     ("Binary Accuracy Mean", "@{Binary Accuracy Mean}"),
     ("Binary Accuracy Std", "@{Binary Accuracy Std}")]
 
+plots_dir = "plots"
 #Transfer melhor
-plot_columns(df, ["Extraction Type"], tooltips=tooltips, out_filename="extraction_type.html")
+plot_columns(df, ["Extraction Type"], tooltips=tooltips, out_filename=os.path.join(plots_dir, "extraction_type.html"))
 
 #Aparenta bem distribuido
 df = df[df["Extraction Type"] == "Transfer"]
-plot_columns(df, ["Distance Function Type"], tooltips=tooltips, out_filename="eucl_vs_cos.html")
+plot_columns(df, ["Distance Function Type"], tooltips=tooltips, out_filename=os.path.join(plots_dir, "eucl_vs_cos.html"))
 
 #3 e 2 quase tudo alto, os outros distribuidos. 3 e 2 melhor
 plot_columns(df[df["Extraction Type"] == "Transfer"], ["Combination Function Level"],
-tooltips=tooltips, out_filename="levels.html")
+tooltips=tooltips, out_filename=os.path.join(plots_dir, "levels.html"))
 
 #Todos bons, mas cosseno um pouco melhor
 df = df[df["Combination Function Level"] >= 3]
-plot_columns(df, ["Extraction Type", "Extraction Layer"], tooltips=tooltips, out_filename="layers.html")
+plot_columns(df, ["Extraction Type", "Extraction Layer"], tooltips=tooltips, out_filename=os.path.join(plots_dir, "layers.html"))
 
 #Melhores
 df = df[df["Distance Function Type"] == "Cosine"]
-plot_columns(df, ["Distance Function Type"], tooltips=tooltips, out_filename="tops.html")
+plot_columns(df, ["Distance Function Type"], tooltips=tooltips, out_filename=os.path.join(plots_dir, "tops.html"))
