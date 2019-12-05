@@ -36,6 +36,7 @@ def test_model(img_a, img_b):
     plt.show(block=True)
 
 test_model("katy_perry_1.jpg", "katy_perry_2.jpg")
+test_model("katy_perry_3.jpg", "katy_perry_4.jpg")
 test_model("katy_perry_1.jpg", "zooey_deschanel_2.jpg")
 test_model("zooey_deschanel_1.jpg", "zooey_deschanel_2.jpg")
 test_model("zooey_deschanel_1.jpg", "katy_perry_2.jpg")
